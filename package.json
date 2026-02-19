@@ -1,15 +1,19 @@
 {
   "name": "intent-parser",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Parse natural language payment intents into structured JSON",
+  "main": "src/index.ts",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
-  "keywords": [],
+  "keywords": ["payment", "intent", "parser", "nlp"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.77.0",
     "dotenv": "^17.3.1",
