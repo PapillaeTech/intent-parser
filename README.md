@@ -43,7 +43,30 @@ npm start
 
 ## 🚀 Quick Start
 
-### 1. Configure Environment
+### Option 1: Command Line Interface (CLI)
+
+Use the parser directly from the command line:
+
+```bash
+# Install globally (optional)
+npm install -g .
+
+# Or use via npx
+npx intent-parser "send $500 to John in Manila"
+
+# Or use the npm script
+npm run cli "send $500 to John in Manila"
+
+# JSON output
+npm run cli -- --json "pay my sister 200 euros"
+
+# Pipe input
+echo "send $1000 USDC to Nigeria" | npm run cli
+```
+
+### Option 2: API Server
+
+#### 1. Configure Environment
 
 Copy `.env.example` to `.env` and customize:
 
@@ -57,7 +80,7 @@ DEFAULT_CURRENCY=USD
 DEFAULT_URGENCY=standard
 ```
 
-### 2. Start the Server
+#### 2. Start the Server
 
 ```bash
 npm start
@@ -65,12 +88,45 @@ npm start
 
 The server will validate all required environment variables before starting. If any are missing or invalid, it will exit with a clear error message.
 
-### 3. Make a Request
+#### 3. Make a Request
 
 ```bash
 curl -X POST http://localhost:3000/parse \
   -H "Content-Type: application/json" \
   -d '{"input": "send $500 to John in Manila"}'
+```
+
+## 💻 Command Line Usage
+
+The CLI provides a simple way to parse payment intents without running a server:
+
+```bash
+# Basic usage
+intent-parser "send $500 to John in Manila"
+
+# JSON output
+intent-parser --json "pay my sister 200 euros"
+
+# Pipe input
+echo "send $1000 USDC to Nigeria" | intent-parser
+
+# Help
+intent-parser --help
+```
+
+**Example Output:**
+```
+📋 Parsed Payment Intent
+
+Input: "send $500 to John in Manila"
+
+💰 Amount: 500 USD
+💵 Currency: USD
+👤 Recipient: John
+🌍 Destination: PH
+🔄 Corridor: USD-PHP
+⚡ Urgency: standard
+📊 Confidence: 100%
 ```
 
 ## 📖 API Documentation
