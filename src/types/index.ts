@@ -33,3 +33,16 @@ export interface ExtractedFields {
   destination_country: string | null;
   corridor: string | null;
 }
+
+// Re-export new intent types
+export type { 
+  ParsedIntent,
+  PaymentIntent as NewPaymentIntent,
+  QueryTransactionIntent,
+  QueryStatusIntent,
+  QueryBalanceIntent,
+  QueryHistoryIntent,
+  QuerySearchIntent,
+  QueryListIntent,
+  IntentType
+} from './intent-types.js';

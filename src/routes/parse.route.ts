@@ -23,24 +23,41 @@ export async function parseHandler(
   const { input } = validationResult.data;
 
   try {
-    // Parse the intent
-    const intent = intentParserService.parseIntent(input);
+    // Check if client wants new format (via query parameter or header)
+    const useNewFormat = request.query && typeof request.query === 'object' && 'format' in request.query && request.query.format === 'new';
+    
+    if (useNewFormat) {
+      // Use new parser that supports all intent types
+      const parsedIntent = intentParserService.parse(input);
+      
+      const response = {
+        success: true,
+        intent: parsedIntent,
+        raw_input: input,
+        parsed_at: new Date().toISOString(),
+      };
+      
+      return reply.status(200).send(response);
+    } else {
+      // Use legacy parser for backward compatibility
+      const intent = intentParserService.parseIntent(input);
 
-    // Build response
-    const response: ParseResponse = {
-      success: true,
-      intent,
-      raw_input: input,
-      parsed_at: new Date().toISOString(),
-    };
+      // Build response
+      const response: ParseResponse = {
+        success: true,
+        intent,
+        raw_input: input,
+        parsed_at: new Date().toISOString(),
+      };
 
-    // Validate response (for development/debugging)
-    const responseValidation = ParseResponseSchema.safeParse(response);
-    if (!responseValidation.success) {
-      request.log.warn({ error: responseValidation.error }, 'Response validation failed');
+      // Validate response (for development/debugging)
+      const responseValidation = ParseResponseSchema.safeParse(response);
+      if (!responseValidation.success) {
+        request.log.warn({ error: responseValidation.error }, 'Response validation failed');
+      }
+
+      return reply.status(200).send(response);
     }
-
-    return reply.status(200).send(response);
   } catch (error) {
     request.log.error({ error }, 'Error parsing intent');
     
