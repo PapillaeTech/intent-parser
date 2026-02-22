@@ -11,9 +11,17 @@ export function parseIntent(input: string): PaymentIntent {
 
 /**
  * New function - parses input and returns ParsedIntent (supports all intent types)
+ * Uses async LLM enhancement when available
  */
-export function parse(input: string): ParsedIntent {
+export async function parse(input: string): Promise<ParsedIntent> {
   return intentParserService.parse(input);
+}
+
+/**
+ * Synchronous version - parses without LLM enhancement
+ */
+export function parseSync(input: string): ParsedIntent {
+  return intentParserService.parseSync(input);
 }
 
 // Re-export for convenience

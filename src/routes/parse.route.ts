@@ -27,8 +27,8 @@ export async function parseHandler(
     const useNewFormat = request.query && typeof request.query === 'object' && 'format' in request.query && request.query.format === 'new';
     
     if (useNewFormat) {
-      // Use new parser that supports all intent types
-      const parsedIntent = intentParserService.parse(input);
+      // Use new parser that supports all intent types (async for LLM)
+      const parsedIntent = await intentParserService.parse(input);
       
       const response = {
         success: true,

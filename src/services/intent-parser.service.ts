@@ -17,6 +17,7 @@ import {
   extractSearchQuery, 
   extractListQuery 
 } from '../utils/query-extractors.js';
+import { llmEnhancementService } from './llm/llm-enhancement.service.js';
 
 /**
  * Main service for parsing intents from natural language
@@ -39,8 +40,9 @@ export class IntentParserService {
 
   /**
    * Parses natural language input into a structured intent (supports multiple intent types)
+   * Uses hybrid approach: pattern matching first, LLM enhancement for low confidence
    */
-  public parse(input: string): ParsedIntent {
+  public async parse(input: string): Promise<ParsedIntent> {
     // Validate input
     const normalizedInput = input.trim();
     if (!normalizedInput) {
@@ -53,7 +55,78 @@ export class IntentParserService {
     const intentType = classifyIntent(normalizedInput);
     const baseConfidence = getClassificationConfidence(normalizedInput, intentType);
 
-    // Parse based on intent type
+    // Parse based on intent type (pattern matching first)
+    let parsedIntent: ParsedIntent;
+    switch (intentType) {
+      case 'payment':
+        parsedIntent = this.parsePaymentIntent(normalizedInput, baseConfidence);
+        break;
+      case 'query_transaction':
+        parsedIntent = this.parseTransactionQuery(normalizedInput, baseConfidence);
+        break;
+      case 'query_status':
+        parsedIntent = this.parseStatusQuery(normalizedInput, baseConfidence);
+        break;
+      case 'query_balance':
+        parsedIntent = this.parseBalanceQuery(normalizedInput, baseConfidence);
+        break;
+      case 'query_history':
+        parsedIntent = this.parseHistoryQuery(normalizedInput, baseConfidence);
+        break;
+      case 'query_search':
+        parsedIntent = this.parseSearchQuery(normalizedInput, baseConfidence);
+        break;
+      case 'query_list':
+        parsedIntent = this.parseListQuery(normalizedInput, baseConfidence);
+        break;
+      default:
+        // Fallback to payment intent for backward compatibility
+        parsedIntent = this.parsePaymentIntent(normalizedInput, 0.5);
+    }
+
+    // Hybrid + Confidence-based LLM enhancement
+    if (llmEnhancementService.isAvailable()) {
+      const enhancedIntent = await llmEnhancementService.enhanceIntent(
+        normalizedInput,
+        parsedIntent,
+        parsedIntent.confidence
+      );
+
+      if (enhancedIntent) {
+        return enhancedIntent;
+      }
+
+      // If LLM didn't enhance but we have missing fields, try to fill them
+      if (parsedIntent.type === 'payment' && (parsedIntent as NewPaymentIntent).missing_fields) {
+        const filledIntent = await llmEnhancementService.fillMissingFields(
+          normalizedInput,
+          parsedIntent,
+          (parsedIntent as NewPaymentIntent).missing_fields || []
+        );
+
+        if (filledIntent) {
+          return filledIntent;
+        }
+      }
+    }
+
+    return parsedIntent;
+  }
+
+  /**
+   * Synchronous version for backward compatibility (without LLM)
+   */
+  public parseSync(input: string): ParsedIntent {
+    const normalizedInput = input.trim();
+    if (!normalizedInput) {
+      throw new Error('Input cannot be empty');
+    }
+
+    this.validateInput(normalizedInput);
+
+    const intentType = classifyIntent(normalizedInput);
+    const baseConfidence = getClassificationConfidence(normalizedInput, intentType);
+
     switch (intentType) {
       case 'payment':
         return this.parsePaymentIntent(normalizedInput, baseConfidence);
@@ -70,16 +143,16 @@ export class IntentParserService {
       case 'query_list':
         return this.parseListQuery(normalizedInput, baseConfidence);
       default:
-        // Fallback to payment intent for backward compatibility
         return this.parsePaymentIntent(normalizedInput, 0.5);
     }
   }
 
   /**
    * Parses payment intent (backward compatibility method)
+   * Uses synchronous parsing (no LLM)
    */
   public parseIntent(input: string): PaymentIntent {
-    const parsed = this.parse(input);
+    const parsed = this.parseSync(input);
     if (parsed.type !== 'payment') {
       // Convert to old PaymentIntent format for backward compatibility
       return {

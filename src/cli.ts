@@ -7,7 +7,7 @@ import type { ParsedIntent } from './types/index.js';
 /**
  * CLI interface for intent parser
  */
-function main() {
+async function main() {
   // Load config (for max input length validation)
   try {
     loadConfig();
@@ -46,8 +46,8 @@ function main() {
   }
 
   try {
-    // Parse the intent using new parser
-    const parsedIntent = parse(input);
+    // Parse the intent using new parser (async for LLM support)
+    const parsedIntent = await parse(input);
 
     // Output result
     if (jsonOutput) {

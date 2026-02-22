@@ -21,7 +21,15 @@ const envSchema = z.object({
   MAX_INPUT_LENGTH: z.string().regex(/^\d+$/).transform(Number).default(1000),
   DEFAULT_CURRENCY: z.string().default('USD'),
   DEFAULT_URGENCY: z.enum(['standard', 'high']).default('standard'),
-});
+
+  // LLM Configuration (all optional)
+  LLM_ENABLED: z.string().transform((val) => val === 'true').default('false').optional(),
+  LLM_PROVIDER: z.enum(['openai', 'claude', 'anthropic', 'google']).optional(),
+  LLM_CONFIDENCE_THRESHOLD: z.string().regex(/^\d*\.?\d+$/).transform(Number).optional(),
+  LLM_TEMPERATURE: z.string().regex(/^\d*\.?\d+$/).transform(Number).optional(),
+  LLM_MAX_TOKENS: z.string().regex(/^\d+$/).transform(Number).optional(),
+  LLM_USE_FALLBACK: z.string().transform((val) => val === 'true').optional(),
+}).passthrough(); // Allow additional env vars
 
 type EnvConfig = z.infer<typeof envSchema>;
 
@@ -105,6 +113,17 @@ export const appConfig = {
       maxInputLength: getConfig().MAX_INPUT_LENGTH,
       defaultCurrency: getConfig().DEFAULT_CURRENCY,
       defaultUrgency: getConfig().DEFAULT_URGENCY,
+    };
+  },
+  get llm() {
+    const config = getConfig();
+    return {
+      enabled: config.LLM_ENABLED ?? false,
+      provider: config.LLM_PROVIDER,
+      confidenceThreshold: config.LLM_CONFIDENCE_THRESHOLD ?? 0.6,
+      temperature: config.LLM_TEMPERATURE ?? 0.3,
+      maxTokens: config.LLM_MAX_TOKENS ?? 500,
+      useFallback: config.LLM_USE_FALLBACK ?? true,
     };
   },
 };
